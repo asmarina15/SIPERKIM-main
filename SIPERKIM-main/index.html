@@ -36,6 +36,7 @@
 
         <!-- CSS Leaflet -->
         <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+        <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     
 
         <style>
@@ -230,7 +231,7 @@
         <!-- Carousel End -->
 
         <!-- Feature Start -->
-        <div class="container py-5">
+        <!-- <div class="container py-5">
             <div class="row justify-content-center">
                 <div class="margin-right: 70px; margin-left: 70px;">
                     <div class="card shadow-lg rounded-4">
@@ -244,38 +245,70 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </div> -->
         
-        <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-        <script>
-            // Inisialisasi peta
-            var map = L.map('map').setView([-7.797068, 110.370529], 13); // Koordinat Yogyakarta
+        <body class="bg-gray-100">
+            <div class="container py-5">
+                <div class="bg-white shadow-lg rounded-2xl p-4">
+                    <div class="flex space-x-2 border-b pb-2 mb-4">
+                        <button class="tab-btn bg-blue-500 text-white px-4 py-2" onclick="showTab('peta')">Peta</button>
+                        <button class="tab-btn bg-gray-200 text-gray-700 px-4 py-2" onclick="showTab('data')">Data Perumahan</button>
+                        <button class="tab-btn bg-gray-200 text-gray-700 px-4 py-2" onclick="showTab('alur')">Alur Penyerahan</button>
+                        <button class="tab-btn bg-gray-200 text-gray-700 px-4 py-2" onclick="showTab('faq')">Pertanyaan Umum</button>
+                    </div>
+                    <div class="flex justify-between items-center mb-4">
+                        <div>
+                            <select id="basemapSelector" class="p-2 border rounded">
+                                <option value="osm">OpenStreetMap</option>
+                                <option value="carto">Carto Light</option>
+                                <option value="esri">Esri World Imagery</option>
+                            </select>
+                            <input type="text" id="searchInput" placeholder="Cari lokasi..." class="p-2 border rounded ml-2">
+                            <button onclick="searchLocation()" class="p-2 bg-blue-500 text-white rounded">Cari</button>
+                        </div>
+                    </div>
         
-            // Tambahkan tile layer dari OpenStreetMap
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors'
-            }).addTo(map);
+                    <div id="peta" class="tab-content">
+                        <div id="map" class="h-96 w-full rounded-lg"></div>
+                    </div>
+                </div>
+            </div>
+            <script>
+                function showTab(tabId) {
+                    document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+                    document.getElementById(tabId).classList.remove('hidden');
+                    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.replace('bg-blue-500', 'bg-gray-200'));
+                    document.querySelector(`button[onclick="showTab('${tabId}')"]`).classList.replace('bg-gray-200', 'bg-blue-500');
+                }
         
-            // Gunakan ikon marker dari file lokal
-            var customIcon = L.icon({
-                iconUrl: 'img/home.png', // Gantilah dengan path ikon Anda', // Gantilah dengan path ikon yang Anda simpan
-                iconSize: [40, 40], // Ukuran ikon
-                iconAnchor: [20, 40], // Posisi anchor (tengah bawah)
-                popupAnchor: [0, -35] // Posisi popup
-            });
+                var map = L.map('map').setView([-7.797068, 110.370529], 13);
+                var baseMaps = {
+                    "osm": L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map),
+                    "carto": L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '© Carto' }),
+                    "esri": L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: '© Esri' })
+                };
         
-            // Tambahkan marker ke peta
-            var marker = L.marker([-7.797068, 110.370529], { icon: customIcon }).addTo(map)
-                .bindPopup("<b>Yogyakarta</b><br>Ini adalah peta Leaflet dengan ikon marker lokal.")
-                .openPopup();
+                document.getElementById("basemapSelector").addEventListener("change", function() {
+                    map.eachLayer(layer => map.removeLayer(layer));
+                    baseMaps[this.value].addTo(map);
+                });
         
-            // Zoom otomatis saat marker diklik
-            marker.on('click', function () {
-                map.setView(marker.getLatLng(), 15);
-            });
-        
-        </script>
-        <!-- Feature End
+                function searchLocation() {
+                    let query = document.getElementById("searchInput").value;
+                    if (query) {
+                        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}`)
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.length > 0) {
+                                    let latlng = [data[0].lat, data[0].lon];
+                                    map.setView(latlng, 15);
+                                    L.marker(latlng).addTo(map).bindPopup(query).openPopup();
+                                }
+                            });
+                    }
+                }
+            </script>
+        <!-- Feature End -->
 
         <!-- About Start -->
         <div class="container-fluid bg-light about pb-5">
